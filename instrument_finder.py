@@ -3,16 +3,6 @@ from trading_calendars.utils.memoize import lazyval
 from .financial_center_info import FinancialCenterInfo
 from .exchange_info import ExchangeInfo
 
-CountryCode = pd.read_csv(".\shogun\shogun\database\CountryCode.csv")
-AssetClass = pd.read_csv(".\shogun\shogun\database\AssetClass.csv")
-CurrencyCode = pd.read_csv(".\shogun\shogun\database\CurrencyCode.csv")
-ExchangeCode = pd.read_csv(".\shogun\shogun\database\ExchangeCode.csv")
-FinancialCenter = pd.read_csv(".\shogun\shogun\database\FinancialCenter.csv")
-FinancialInstrumentTableDirectory = pd.read_csv(".\shogun\shogun\database\FinancialInstrumentTableDirectory.csv")
-Forex = pd.read_csv(".\shogun\shogun\database\Forex.csv")
-FutureRootContractListingTable = pd.read_csv(".\shogun\shogun\database\FutureRootContractListingTable.csv")
-FutureRootTable = pd.read_csv(".\shogun\shogun\database\FutureRootTable.csv")
-
 FUT_CODE_TO_MONTH = dict(zip('FGHJKMNQUVXZ', range(1, 13)))
 MONTH_TO_FUT_CODE = dict(zip(range(1, 13), 'FGHJKMNQUVXZ'))
 
@@ -37,13 +27,13 @@ class InstrumentFinder(object):
     """
 
     def __init__(self):
-        self._country_code = pd.read_csv(".\database\CountryCode.csv", keep_default_na=False)
-        self._asset_class = pd.read_csv(".\database\AssetClass.csv")
-        self._currency_code = pd.read_csv(".\database\CurrencyCode.csv")
-        self._exchange_code = pd.read_csv(".\database\ExchangeCode.csv")
-        self._financial_center = pd.read_csv(".\database\FinancialCenter.csv")
-        self._future_contract_listing = pd.read_csv(".\database\FutureRootContractListingTable.csv")
-        self._future_root = pd.read_csv(".\database\FutureRootTable.csv")
+        self._country_code = pd.read_csv(".\shogun_database\CountryCode.csv", keep_default_na=False)
+        self._asset_class = pd.read_csv(".\shogun_database\AssetClass.csv")
+        self._currency_code = pd.read_csv(".\shogun_database\CurrencyCode.csv")
+        self._exchange_code = pd.read_csv(".\shogun_database\ExchangeCode.csv")
+        self._financial_center = pd.read_csv(".\shogun_database\FinancialCenter.csv")
+        self._future_contract_listing = pd.read_csv(".\shogun_database\FutureRootContractListingTable.csv")
+        self._future_root = pd.read_csv(".\shogun_database\FutureRootTable.csv")
 
     @lazyval
     def country_info(self):
