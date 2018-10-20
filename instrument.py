@@ -92,7 +92,7 @@ class Instrument(object):
         Convert to a python dict.
         """
         return {
-            'symbol_id': self.symbol,
+            'exchange_id': self.symbol,
             'instrument_name': self.instrument_name,
             'instrument_country_id': self.instrument_country_id
             'asset_class_id': self.asset_class_id,
@@ -154,11 +154,12 @@ class Instrument(object):
 class Future(Instrument):
 
     _kwargnames = frozenset({
-        'symbol_id',
+        'exchange_symbol',
         'root_symbol',
         'instrument_name',
         'instrument_country_id',
-        'asset_class_id',
+        'underlying_name',
+        'underlying_asset_class_id',
         'settle_start',
         'settle_end',
         'settle_method',
@@ -168,7 +169,6 @@ class Future(Instrument):
         'final_settle_method',
         'final_settle_timezone',
         'last_trade_time'
-#        'first_traded',
         'quote_currency_id',
         'multiplier',
         'tick_size',
@@ -186,6 +186,10 @@ class Future(Instrument):
         'volume_switch_date',
         'open_interest_switch_date',
         'auto_close_date',
+        'parent_calendar_id',
+        'child_calendar_id'
+        'average_pricing',
+        'deliverable',
         'delivery_month',
         'delivery_year',
     })
