@@ -78,3 +78,9 @@ class FutureContractsNotFound(ExchangeSymbolsNotFound):
         if self.plural:
             return "No future contracts found for exchange_symbols: {exchange_symbols}."
         return "No future contract found for exchange_symbol: {exchange_symbols[0]}."
+
+class HistoryWindowStartsBeforeData(ShogunError):
+    msg = (
+        "History window extends before {first_trading_day}. To use this "
+        "history window, start the backtest on or after {suggested_start_day}."
+        )
