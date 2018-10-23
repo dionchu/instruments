@@ -1,16 +1,19 @@
 from functools import partial
-
+import pandas as pd
 from numpy import array, empty, iinfo
 from pandas import Timestamp
-from .trading_calendars import get_calendar
+from trading_calendars import get_calendar
 import warnings
+
+import os
+dirname = os.path.dirname(__file__)
 
 def delivery_predicate(codes, contract):
     # This relies on symbols that are construct following a pattern of
     # root symbol + delivery code + year, e.g. PLF16
     # This check would be more robust if the future contract class had
     # a 'delivery_month' member.
-    delivery_code = contract.symbol[-3]
+    delivery_code = contract.exchange_symbol[-3]
     return delivery_code in codes
 
 class ContractNode(object):
@@ -50,7 +53,7 @@ class OrderedContracts(object):
     start_dates : long[:]
         The start dates of the contracts in the chain.
         Corresponds by index with contract_sids.
-    auto_close_dates : long[:]
+    auto_close_date : long[:]
         The auto close dates of the contracts in the chain.
         Corresponds by index with contract_sids.
     chain_predicates : dict
@@ -60,7 +63,7 @@ class OrderedContracts(object):
     """
 
     def __init__(self, root_symbol, contracts, active=True):
-        self._future_contract_listing = pd.read_csv(dirname + "\..\_FutureRootContractListingTable.csv")
+        self._future_contract_listing = pd.read_csv(dirname + "\..\shogun_database\_FutureRootContractListingTable.csv")
 
         self.root_symbol = root_symbol
 
@@ -73,13 +76,13 @@ class OrderedContracts(object):
         if active:
             chain_predicate = partial(delivery_predicate,
                 set(self._future_contract_listing[
-                    (self._future_contract_listing['root_id'] == self.root_symbol) &
+                    (self._future_contract_listing['root_symbol'] == self.root_symbol) &
                     (self._future_contract_listing['active'] == 1)
                     ]['delivery_month']))
         else:
             chain_predicate = partial(delivery_predicate,
                 set(self._future_contract_listing[
-                    (self._future_contract_listing['root_id'] == self.root_symbol)
+                    (self._future_contract_listing['root_symbol'] == self.root_symbol)
                     ]['delivery_month']))
 
         self._head_contract = None
@@ -118,7 +121,7 @@ class OrderedContracts(object):
             if curr.contract.auto_close_date > dt_value:
                 break
             curr = curr.next
-        return curr.contract.root_symbol
+        return curr.contract.exchange_symbol
 
     def contract_at_offset(self, exchange_symbol, offset, start_cap):
         """
@@ -138,7 +141,7 @@ class OrderedContracts(object):
             return None
 
     def active_chain(self, starting_exchange_symbol, dt_value):
-        curr = self.exchange_to_contract[starting_exchange_symbol]
+        curr = self.exchange_symbol_to_contract[starting_exchange_symbol]
         contracts = []
 
         while curr is not None:

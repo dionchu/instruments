@@ -22,7 +22,7 @@ class ShogunError(Exception):
 
 class SymbolsNotFound(ShogunError):
     """
-    Raised when a retrieve_asset() or retrieve_all() call contains a
+    Raised when a retrieve_instruments() or retrieve_all() call contains a
     non-existent sid.
     """
     @lazyval
@@ -38,3 +38,43 @@ class SymbolsNotFound(ShogunError):
         if self.plural:
             return "No instruments found for exchange symbols: {exchange_symbols}."
         return "No instrument found for exchange_symbol: {exchange_symbols[0]}."
+
+class ExchangeSymbolsNotFound(ShogunError):
+    """
+    Raised when a retrieve_instrument() or retrieve_all() call contains a
+    non-existent exchange_symbol.
+    """
+    @lazyval
+    def plural(self):
+        return len(self.exchange_symbols) > 1
+
+    @lazyval
+    def exchange_symbols(self):
+        return self.kwargs['exchange_symbols']
+
+    @lazyval
+    def msg(self):
+        if self.plural:
+            return "No assets found for exchange_symbols: {exchange_symbols}."
+        return "No asset found for exchange_symbol: {exchange_symbols[0]}."
+
+class EquitiesNotFound(ExchangeSymbolsNotFound):
+    """
+    Raised when a call to `retrieve_equities` fails to find an instrument.
+    """
+    @lazyval
+    def msg(self):
+        if self.plural:
+            return "No equities found for exchange_symbols: {exchange_symbols}."
+        return "No equity found for exchange_symbol: {exchange_symbols[0]}."
+
+
+class FutureContractsNotFound(ExchangeSymbolsNotFound):
+    """
+    Raised when a call to `retrieve_futures_contracts` fails to find an instrument.
+    """
+    @lazyval
+    def msg(self):
+        if self.plural:
+            return "No future contracts found for exchange_symbols: {exchange_symbols}."
+        return "No future contract found for exchange_symbol: {exchange_symbols[0]}."

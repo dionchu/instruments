@@ -5,56 +5,61 @@ class Instrument(object):
     An Instrument represents the metadata of a symbol
     """
     _kwargnames = frozenset({
-        'symbol_id',
+        'exchange_symbol',
         'instrument_name',
         'instrument_country_id',
-        'asset_class_id',
+        'underlying_name',
+        'underlying_asset_class_id',
         'settle_start',
         'settle_end',
         'settle_method',
         'settle_timezone',
-#        'first_traded',
-        'auto_close_date',
         'quote_currency_id',
         'multiplier',
         'tick_size',
         'start_date',
         'end_date',
+        'exchange_info',
+        'parent_calendar_id',
+        'child_calendar_id'
     })
 
     def __init__(self,
-                symbol_id="",
+                exchange_symbol="",
                 instrument_name="",
                 instrument_country_id="",
-                asset_class_id="",
+                underlying_name="",
+                underlying_asset_class_id="",
                 settle_start=None,
                 settle_end=None,
                 settle_method=None,
                 settle_timezone=None,
-                exchange_info=None,
-#                first_traded=None,
-                auto_close_date=None,
                 quote_currency_id="",
                 multiplier=1,
                 tick_size=0.01,
                 start_date=None,
-                end_date=None):
+                end_date=None,
+                exchange_info=None,
+                parent_calendar_id=None,
+                child_calendar_id=None):
 
-        self.symbol_id = symbol_id
+        self.exchange_symbol = exchange_symbol
         self.instrument_name = instrument_name
         self.instrument_country_id = instrument_country_id
-        self.asset_class_id = asset_class_id
+        self.underlying_name = underlying_name
+        self.underlying_asset_class_id = underlying_asset_class_id
         self.settle_start = settle_start
         self.settle_end = settle_end
         self.settle_method = settle_method
         self.settle_timezone = settle_timezone
-#        self.first_traded = first_traded
-        self.auto_close_date = auto_close_date
         self.quote_currency_id = quote_currency_id
         self.multiplier = multiplier
         self.tick_size = tick_size
         self.start_date = start_date
         self.end_date = end_date
+        self.exchange_info = exchange_info
+        self.parent_calendar_id = parent_calendar_id
+        self.child_calendar_id = child_calendar_id
 
     @property
     def exchange(self):
@@ -92,20 +97,23 @@ class Instrument(object):
         Convert to a python dict.
         """
         return {
-            'exchange_id': self.symbol,
+            'exchange_symbol': self.exchange_symbol,
             'instrument_name': self.instrument_name,
-            'instrument_country_id': self.instrument_country_id
-            'asset_class_id': self.asset_class_id,
+            'instrument_country_id': self.instrument_country_id,
+            'underlying_name': self.underlying_name,
+            'underlying_asset_class_id': self.underlying_asset_class_id,
             'settle_start': self.settle_start,
             'settle_end': self.settle_end,
+            'settle_method': self.settle_method,
             'settle_timezone': self.settle_timezone,
-#            'first_traded': self.first_traded,
-            'auto_close_date': self.auto_close_date,
             'quote_currency_id': self.quote_currency_id,
-            'multiplier': self.price_multiplier,
+            'multiplier': self.multiplier,
             'tick_size': self.tick_size,
             'start_date': self.start_date,
             'end_date': self.end_date,
+            'exchange_info': self.exchange_info,
+            'parent_calendar_id': self.parent_calendar_id,
+            'child_calendar_id': self.child_calendar_id,
             'exchange_info': self.exchange_info,
             'exchange': self.exchange,
             'exchange_full': self.exchange_full,
@@ -178,14 +186,177 @@ class Future(Instrument):
         'last_trade',
         'first_position',
         'last_position',
-        'first_notice_date',
-        'last_notice_date',
-        'first_delivery_date',
-        'last_delivery_date',
+        'first_notice',
+        'last_notice',
+        'first_delivery',
+        'last_delivery',
         'settlement_date',
         'volume_switch_date',
         'open_interest_switch_date',
         'auto_close_date',
+        'exchange_info',
+        'parent_calendar_id',
+        'child_calendar_id'
+        'average_pricing',
+        'deliverable',
+        'delivery_month',
+        'delivery_year',
+    })
+
+    def __init__(self,
+                exchange_symbol="",
+                root_symbol="",
+                instrument_name="",
+                instrument_country_id="",
+                underlying_name="",
+                underlying_asset_class_id="",
+                settle_start=None,
+                settle_end=None,
+                settle_method=None,
+                settle_timezone=None,
+                final_settle_start=None,
+                final_settle_end=None,
+                final_settle_method=None,
+                final_settle_timezone=None,
+                last_trade_time=None,
+                quote_currency_id="",
+                multiplier=1,
+                tick_size=0.01,
+                start_date=None,
+                end_date=None,
+                first_trade=None,
+                last_trade=None,
+                first_position=None,
+                last_position=None,
+                first_notice=None,
+                last_notice=None,
+                first_delivery=None,
+                last_delivery=None,
+                settlement_date=None,
+                volume_switch_date=None,
+                open_interest_switch_date=None,
+                auto_close_date=None,
+                exchange_info=None,
+                parent_calendar_id=None,
+                child_calendar_id=None,
+                average_pricing=0,
+                deliverable="",
+                delivery_month="",
+                delivery_year=""):
+
+        super().__init__(
+            exchange_symbol=exchange_symbol,
+            instrument_name=instrument_name,
+            instrument_country_id=instrument_country_id,
+            underlying_name=underlying_name,
+            underlying_asset_class_id=underlying_asset_class_id,
+            settle_start=settle_start,
+            settle_end=settle_end,
+            settle_method=settle_method,
+            settle_timezone=settle_timezone,
+            quote_currency_id=quote_currency_id,
+            multiplier=multiplier,
+            tick_size=tick_size,
+            start_date=start_date,
+            end_date=end_date,
+            exchange_info = exchange_info,
+            parent_calendar_id=parent_calendar_id,
+            child_calendar_id=child_calendar_id
+        )
+        self.root_symbol = root_symbol
+        self.final_settle_start = final_settle_start
+        self.final_settle_end = final_settle_end
+        self.final_settle_method = final_settle_method
+        self.final_settle_timezone = final_settle_timezone
+        self.last_trade_time = last_trade_time
+        self.first_trade = first_trade
+        self.last_trade = last_trade
+        self.first_position = first_position
+        self.last_position = last_position
+        self.first_notice = first_notice
+        self.last_notice = last_notice
+        self.first_delivery = first_delivery
+        self.last_delivery = last_delivery
+        self.settlement_date = settlement_date
+        self.volume_switch_date = volume_switch_date
+        self.open_interest_switch_date = open_interest_switch_date
+        self.average_pricing = average_pricing
+        self.deliverable = deliverable
+        self.delivery_month = delivery_month
+        self.delivery_year = delivery_year
+
+        if auto_close_date is None:
+            if first_notice is None:
+                self.auto_close_date = last_trade
+            else:
+                self.auto_close_date = first_notice
+        else:
+            self.auto_close_date = eval(auto_close_date)
+
+    def to_dict(self):
+        """
+        Convert to a python dict.
+        """
+        super_dict = super(Future, self).to_dict()
+        super_dict['root_symbol'] = self.root_symbol
+        super_dict['final_settle_start'] = self.final_settle_start
+        super_dict['final_settle_end'] = self.final_settle_end
+        super_dict['final_settle_method'] = self.final_settle_method
+        super_dict['final_settle_timezone'] = self.final_settle_timezone
+        super_dict['last_trade_time'] = self.last_trade_time
+        super_dict['first_trade'] = self.first_trade
+        super_dict['last_trade'] = self.last_trade
+        super_dict['first_position'] = self.first_position
+        super_dict['last_position'] = self.last_position
+        super_dict['first_notice'] = self.first_notice
+        super_dict['last_notice'] = self.last_notice
+        super_dict['first_delivery'] = self.first_delivery
+        super_dict['last_delivery'] = self.last_delivery
+        super_dict['settlement_date'] = self.settlement_date
+        super_dict['volume_switch_date'] = self.volume_switch_date
+        super_dict['open_interest_switch_date'] = self.open_interest_switch_date
+        super_dict['average_pricing'] = self.average_pricing
+        super_dict['deliverable'] = self.deliverable
+        super_dict['delivery_month'] = self.delivery_month
+        super_dict['delivery_year'] = self.delivery_year
+
+
+class Equity(Instrument):
+
+    _kwargnames = frozenset({
+        'exchange_symbol',
+        'root_symbol',
+        'instrument_name',
+        'instrument_country_id',
+        'underlying_name',
+        'underlying_asset_class_id',
+        'settle_start',
+        'settle_end',
+        'settle_method',
+        'settle_timezone',
+        'final_settle_start',
+        'final_settle_end',
+        'final_settle_method',
+        'final_settle_timezone',
+        'last_trade_time'
+        'quote_currency_id',
+        'multiplier',
+        'tick_size',
+        'start_date',
+        'end_date',
+        'first_trade',
+        'last_trade',
+        'first_position',
+        'last_position',
+        'first_notice',
+        'last_notice',
+        'first_delivery',
+        'last_delivery',
+        'settlement_date',
+        'volume_switch_date',
+        'open_interest_switch_date',
+        'auto_close_date',
+        'exchange_info',
         'parent_calendar_id',
         'child_calendar_id'
         'average_pricing',
