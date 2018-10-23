@@ -16,6 +16,130 @@ def delivery_predicate(codes, contract):
     delivery_code = contract.exchange_symbol[-3]
     return delivery_code in codes
 
+ADJUSTMENT_STYLES = {'add', 'mul', None}
+
+class ContinuousFuture(object):
+    """
+    Represents a specifier for a chain of future contracts, where the
+    coordinates for the chain are:
+    root_symbol : str
+        The root symbol of the contracts.
+    offset : int
+        The distance from the primary chain.
+        e.g. 0 specifies the primary chain, 1 the secondary, etc.
+    roll_style : str
+        How rolls from contract to contract should be calculated.
+        Currently supports 'calendar'.
+    Instances of this class are exposed to the algorithm.
+    """
+
+    _kwargnames = frozenset({
+        'exchange_symbol',
+        'root_symbol',
+        'offset',
+        'start_date',
+        'end_date',
+        'exchange',
+    })
+
+    def __init__(self,
+                exchange_symbol,
+                root_symbol,
+                offset,
+                roll_style,
+                start_date,
+                end_date,
+                exchange_info,
+                adjustment=None):
+
+        self.exchange_symbol = exchange_symbol
+        self.exchange_symbol_hash = hash(exchange_symbol)
+        self.root_symbol = root_symbol
+        self.roll_style = roll_style
+        self.offset = offset
+        self.exchange_info = exchange_info
+        self.start_date = start_date
+        self.end_date = end_date
+        self.adjustment = adjustment
+
+    @property
+    def exchange(self):
+        return self.exchange_info.canonical_name
+
+    @property
+    def exchange_full(self):
+        return self.exchange_info.name
+
+    def __str__(self):
+        return '%s(%d [%s, %s, %s, %s])' % (
+            type(self).__name__,
+            self.exchange_symbol,
+            self.root_symbol,
+            self.offset,
+            self.roll_style,
+            self.adjustment,
+        )
+
+    def __repr__(self):
+        attrs = ('root_symbol', 'offset', 'roll_style', 'adjustment')
+        tuples = ((attr, repr(getattr(self, attr, None)))
+                  for attr in attrs)
+        strings = ('%s=%s' % (t[0], t[1]) for t in tuples)
+        params = ', '.join(strings)
+        #will have to change this line if switch to numerica id
+        return 'ContinuousFuture(%s, %s)' % (self.exchange_symbol, params)
+
+    def to_dict(self):
+        """
+        Convert to a python dict.
+        """
+        return {
+            'exchange_symbol': self.exchange_symbol,
+            'root_symbol': self.root_symbol,
+            'start_date': self.start_date,
+            'end_date': self.end_date,
+            'offset': self.offset,
+            'roll_style': self.roll_style,
+            'exchange': self.exchange,
+        }
+
+    @classmethod
+    def from_dict(cls, dict_):
+        """
+        Build an ContinuousFuture instance from a dict.
+        """
+        return cls(**dict_)
+
+    def is_alive_for_session(self, session_label):
+        """
+        Returns whether the continuous future is alive at the given dt.
+        Parameters
+        ----------
+        session_label: pd.Timestamp
+            The desired session label to check. (midnight UTC)
+        Returns
+        -------
+        boolean: whether the continuous is alive at the given dt.
+        """
+        ref_start = self.start_date.value
+        ref_end = self.end_date.value
+
+        return ref_start <= session_label.value <= ref_end
+
+    def is_exchange_open(self, dt_minute):
+        """
+        Parameters
+        ----------
+        dt_minute: pd.Timestamp (UTC, tz-aware)
+            The minute to check.
+        Returns
+        -------
+        boolean: whether the continuous futures's exchange is open at the
+        given minute.
+        """
+        calendar = get_calendar(self.exchange)
+        return calendar.is_open_on_minute(dt_minute)
+
 class ContractNode(object):
     def __init__(self, contract):
         self.contract = contract

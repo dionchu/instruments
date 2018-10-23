@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import deque
+from functools import partial
 from pandas import read_hdf
 from six import viewkeys
 from toolz import ( curry, )
@@ -18,7 +19,9 @@ from .instrument import (
     Instrument, Equity, Future,
 )
 from .continuous_futures import(
-    OrderedContracts
+    ADJUSTMENT_STYLES,
+    OrderedContracts,
+    ContinuousFuture
 )
 
 import os
@@ -73,6 +76,17 @@ def _filter_kwargs(names, dict_):
 
 _filter_future_kwargs = _filter_kwargs(Future._kwargnames)
 _filter_equity_kwargs = _filter_kwargs(Equity._kwargnames)
+
+def _generate_continuous_future_symbol(root_symbol,
+                                                offset,
+                                                roll_style,
+                                                adjustment_style=None):
+
+    if not adjustment_style:
+        return '_'.join([root_symbol+str(offset),roll_style])
+    else:
+        return '_'.join([root_symbol+str(offset),roll_style,adjustment_style])
+
 
 class InstrumentFinder(object):
     """
@@ -131,6 +145,51 @@ class InstrumentFinder(object):
             out[row['mic']] = ExchangeInfo(row['exchange_full'], row['mic'], self.financial_center_info[row['financial_center_id']])
         return out
 
+    def create_continuous_future(self,
+                                 root_symbol,
+                                 offset,
+                                 roll_style,
+                                 adjustment):
+
+        if adjustment not in ADJUSTMENT_STYLES:
+            raise ValueError(
+                'Invalid adjustment style {!r}. Allowed adjustment styles are '
+                '{}.'.format(adjustment, list(ADJUSTMENT_STYLES))
+            )
+
+        oc = self.get_ordered_contracts(root_symbol)
+        exchange = self._get_root_symbol_exchange(root_symbol)
+
+        exchange_symbol = _generate_continuous_future_symbol(root_symbol, offset,
+                                                             roll_style, None)
+
+        mul_exchange_symbol = _generate_continuous_future_symbol(root_symbol, offset,
+                                                             roll_style, 'div')
+
+        add_exchange_symbol = _generate_continuous_future_symbol(root_symbol, offset,
+                                                             roll_style, 'add')
+
+
+        cf_template = partial(
+            ContinuousFuture,
+            root_symbol=root_symbol,
+            offset=offset,
+            roll_style=roll_style,
+            start_date=oc.start_date,
+            end_date=oc.end_date,
+            exchange_info=self.exchange_info[exchange],
+        )
+
+        cf = cf_template(exchange_symbol=exchange_symbol)
+        mul_cf = cf_template(mul_exchange_symbol, adjustment = 'mul')
+        add_cf = cf_template(add_exchange_symbol, adjustment = 'add')
+
+        self._instrument_cache[cf.exchange_symbol] = cf
+        self._instrument_cache[mul_cf.exchange_symbol] = mul_cf
+        self._instrument_cache[add_cf.exchange_symbol] = add_cf
+
+        return {None: cf, 'mul': mul_cf, 'add': add_cf}[adjustment]
+
     def get_ordered_contracts(self, root_symbol, active=1):
         try:
             return self._ordered_contracts[root_symbol]
@@ -146,6 +205,10 @@ class InstrumentFinder(object):
         return list(self._future_instrument[
                 self._future_instrument['root_symbol'] == root_symbol
                 ].index)
+
+    def _get_root_symbol_exchange(self, root_symbol):
+        # assumes there are no dupes in _future_root
+        return list(self._future_root[self._future_root['root_symbol'] == root_symbol].exchange_id)[0]
 
     def retrieve_instrument(self, exchange_symbol, default_none=False):
         """
@@ -368,7 +431,7 @@ class InstrumentFinder(object):
 
         def mkdict(row, exchanges=self.exchange_info):
             d = dict(row)
-            d['exchange_info'] = exchanges[d.pop('exchange_info')]
+            d['exchange_info'] = exchanges[d.pop('exchange_id')]
             return d
 
         for instruments in group_into_chunks(exchange_symbols):
