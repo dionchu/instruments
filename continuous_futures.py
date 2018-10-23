@@ -70,8 +70,9 @@ class ContinuousFuture(object):
     def exchange_full(self):
         return self.exchange_info.name
 
+    # Need to change %d to %s if switch to index number
     def __str__(self):
-        return '%s(%d [%s, %s, %s, %s])' % (
+        return '%s(%s [%s, %s, %s, %s])' % (
             type(self).__name__,
             self.exchange_symbol,
             self.root_symbol,
